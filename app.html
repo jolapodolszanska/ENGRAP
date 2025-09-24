@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>ENGRAP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
+  <style>
+    :root{
+      --violet:#6a1b9a; --violet2:#9c27b0;
+      --bg1:#e0c3fc; --bg2:#8ec5fc;
+      --text:#1f2937; --muted:#667085; --border:#e6e6e6;
+      --non:#10b981; --vm:#ef4444; --mild:#f59e0b; --mod:#4f46e5;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; padding:24px; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; background:linear-gradient(135deg,var(--bg1),var(--bg2)); color:#1f2937; display:flex; justify-content:center;}
+    .wrap{ width:min(1040px,100%); background:#fff; border-radius:18px; padding:22px; box-shadow:0 14px 32px rgba(26,26,44,.14); }
+
+    header.brand{ display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }
+    .logo{ width:44px; height:44px; border-radius:10px; box-shadow:0 2px 6px rgba(106,27,154,.25); }
+    h1{margin:0; font-size:26px; color:var(--violet)}
+    p.lead{margin:8px 0 18px; text-align:center; color:#334155}
+
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+    .card{border:1px solid var(--border); border-radius:14px; background:#fff; padding:16px}
+    .card h3{margin:0 0 10px; font-size:16px; color:var(--violet)}
+
+    .drop{ border:2px dashed var(--violet2); border-radius:12px; padding:18px; text-align:center; cursor:pointer; color:var(--violet); font-weight:700; background:#faf6ff; transition:.2s; }
+    .drop.dragover{background:#f3e5f5}
+    .note{font-size:13px; color:#777; margin-top:6px}
+
+    .canvas-wrap{position:relative; margin-top:12px; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#000}
+    canvas{display:block; width:100%; height:auto}
+    #heatCanvas{ position:absolute; inset:0; pointer-events:none; mix-blend-mode:normal; filter:blur(8px); image-rendering:auto; }
+
+    .controls{display:flex; align-items:center; gap:10px; margin-top:10px; color:#334155; flex-wrap:wrap}
+    .controls label{font-size:13px}
+    .controls .spacer{flex:1}
+    input[type="range"]{width:160px}
+
+    .chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .chip{display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-weight:600; font-size:13px; color:#334155; background:#fff}
+    .dot{width:10px; height:10px; border-radius:50%; background:#cbd5e1}
+    .ok{background:#22c55e} .err{background:#ef4444}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px}
+
+    .result-top{display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:linear-gradient(90deg,#faf5ff, #fff 38%)}
+    .result-top .label{font-weight:800; font-size:18px}
+    .result-top .pct{font-weight:900; font-size:22px; color:var(--violet)}
+
+    .bars{display:flex; flex-direction:column; gap:12px; margin-top:12px}
+    .bar{border:1px solid var(--border); border-radius:10px; padding:10px 12px}
+    .bar-head{display:flex; justify-content:space-between; font-weight:700}
+    .meter{margin-top:7px; height:16px; border-radius:8px; overflow:hidden; background:#edf2f7}
+    .meter>div{height:100%; color:#fff; font-size:11px; font-weight:800; text-align:right; padding-right:6px; width:0%; transition:width .45s ease}
+
+    .legend{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; font-size:12px; color:#475569}
+    .badge{display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid var(--border); border-radius:999px}
+    .sw{width:10px; height:10px; border-radius:50%}
+    .sw.non{background:var(--non)} .sw.vm{background:var(--vm)} .sw.mild{background:var(--mild)} .sw.mod{background:var(--mod)}
+
+    .foot{margin-top:10px; font-size:12px; color:#64748b}
+    .spinner{width:16px; height:16px; border:2px solid #e2e8f0; border-top-color:#7c3aed; border-radius:50%; animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand">
+      <svg class="logo" viewBox="0 0 64 64" role="img" aria-label="ENGRAP logo">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a1b9a"/><stop offset="1" stop-color="#8ec5fc"/></linearGradient></defs>
+        <rect x="3" y="3" width="58" height="58" rx="14" fill="url(#g)"/>
+        <path d="M22 20h24 M22 32h18 M22 44h24" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>ENGRAP</h1>
+    </header>
+
+    <p class="lead">
+      Upload an MRI slide. ENGRAP will calculate the probabilities of classes. The RISE heatmap will appear after moving the slider (red = increases class, blue = decreases class). Order: Non → Very Mild → Mild → Moderate.
+    </p>
+
+    <div class="grid">
+      <section class="card">
+        <h3>Image and heatmap</h3>
+        <div id="drop" class="drop">
+          Click or drag the image here
+          <input id="file" type="file" accept="image/*" hidden />
+          <div class="note">JPG, PNG, WEBP · recommended ~299×299 · max 10MB</div>
+        </div>
+
+        <div class="chips">
+          <span id="chipEP" class="chip"><span class="spinner"></span> Engine: Inicialize… Please wait...</span>
+          <span id="chipModel" class="chip"><span class="dot"></span> Model: loading…</span>
+          <span id="chipHeat" class="chip"><span class="dot"></span> Heatmap: waiting for image</span>
+        </div>
+
+        <div class="canvas-wrap" aria-live="polite">
+          <canvas id="imgCanvas" width="299" height="299" aria-label="Podgląd obrazu"></canvas>
+          <canvas id="heatCanvas" width="299" height="299" aria-label="Heatmapa"></canvas>
+        </div>
+
+        <div class="controls">
+          <label for="alpha">Transparency</label>
+          <input type="range" id="alpha" min="0" max="100" value="75" />
+          <span id="alphaVal" class="mono">0.75</span>
+
+          <label for="smooth">Smoothing</label>
+          <input type="range" id="smooth" min="0" max="20" value="8" />
+          <span id="smoothVal" class="mono">8 px</span>
+
+          <span class="spacer"></span>
+          <span id="timing" class="mono"></span>
+        </div>
+
+        <div class="foot">Educational demo. Input: [1,3,299,299], RGB, CHW, ImageNet mean/std.</div>
+      </section>
+
+      <section class="card">
+        <h3>Classification results</h3>
+        <div id="topCard" class="result-top" style="display:none">
+          <div class="label" id="topLabel">—</div>
+          <div class="pct" id="topPct">0.0%</div>
+        </div>
+
+        <div class="bars" id="bars"></div>
+
+        <div class="legend">
+          <span class="badge"><span class="sw non"></span> Non&nbsp;Demented</span>
+          <span class="badge"><span class="sw vm"></span> Very&nbsp;Mild&nbsp;Demented</span>
+          <span class="badge"><span class="sw mild"></span> Mild&nbsp;Demented</span>
+          <span class="badge"><span class="sw mod"></span> Moderate&nbsp;Demented</span>
+        </div>
+
+        <div id="msg" class="foot">Upload an image to see the results. The heatmap will appear when you move the slider.</div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    /* ===== KONFIG ===== */
+    const MODEL_PATH = "captrad.onnx";
+    const INPUT_SIZE = 299;
+
+    const LABELS = ["Mild_Demented","Moderate_Demented","Non_Demented","Very_Mild_Demented"];
+    const PRETTY = {
+      "Mild_Demented":"Mild Demented",
+      "Moderate_Demented":"Moderate Demented",
+      "Non_Demented":"Non Demented",
+      "Very_Mild_Demented":"Very Mild Demented"
+    };
+    const COLORS = { "Non_Demented":"var(--non)", "Very_Mild_Demented":"var(--vm)", "Mild_Demented":"var(--mild)", "Moderate_Demented":"var(--mod)" };
+
+    /* ===== RISE / lazy state ===== */
+    let cachedMap = null, lastTopIdx = 0, riseBusy = false, riseToken = 0;
+
+	// Zwiększono liczbę masek dla lepszej stabilności
+	const RISE_MASKS = 512;  // było 192
+	const RISE_RES = 14;     // było 12 - wyższa rozdzielczość
+	const RISE_P = 0.5;      // bez zmian
+	const CHUNK = 8;         // było 6 - większe chunki
+
+	const LOW_CONF = 0.35;
+
+    /* ===== UI ===== */
+    const drop = document.getElementById("drop");
+    const fileInput = document.getElementById("file");
+    const chipEP = document.getElementById("chipEP");
+    const chipModel = document.getElementById("chipModel");
+    const chipHeat = document.getElementById("chipHeat");
+    const timingEl = document.getElementById("timing");
+    const imgCanvas = document.getElementById("imgCanvas");
+    const heatCanvas = document.getElementById("heatCanvas");
+    const imgCtx = imgCanvas.getContext("2d",{willReadFrequently:true});
+    const heatCtx = heatCanvas.getContext("2d",{willReadFrequently:true});
+    const barsWrap = document.getElementById("bars");
+    const msg = document.getElementById("msg");
+    const topCard = document.getElementById("topCard");
+    const topLabel = document.getElementById("topLabel");
+    const topPct = document.getElementById("topPct");
+    const alphaRange = document.getElementById("alpha");
+    const alphaVal = document.getElementById("alphaVal");
+    const smoothRange = document.getElementById("smooth");
+    const smoothVal = document.getElementById("smoothVal");
+
+    // roboczy canvas do RISE
+    const workCanvas = document.createElement('canvas');
+    workCanvas.width = INPUT_SIZE; workCanvas.height = INPUT_SIZE;
+    const workCtx = workCanvas.getContext('2d',{willReadFrequently:true});
+
+    let session = null, hasImage = false;
+	
+	let brainMask = null;
+
+    (function initEP(){
+      const ep = (navigator.gpu) ? 'WebGPU' : 'WASM';
+      chipEP.innerHTML = `<span class="dot ok"></span> Silnik: ${ep}`;
+    })();
+
+    (async function initModel(){
+      try{
+        session = await ort.InferenceSession.create(MODEL_PATH, { executionProviders:['webgpu','wasm'] });
+        const warm = new ort.Tensor('float32', new Float32Array(1*3*INPUT_SIZE*INPUT_SIZE), [1,3,INPUT_SIZE,INPUT_SIZE]);
+        await session.run({ [session.inputNames[0]]: warm });
+        chipModel.innerHTML = `<span class="dot ok"></span> Model: gotowy`;
+        if (hasImage) runAll();
+      }catch(err){
+        chipModel.innerHTML = `<span class="dot err"></span> Model: błąd`;
+        msg.textContent = "Nie udało się załadować modelu: " + err.message;
+        console.error(err);
+      }
+    })();
+
+    // wejście obrazu
+    drop.addEventListener("click", ()=> fileInput.click());
+    drop.addEventListener("dragover", e=>{ e.preventDefault(); drop.classList.add("dragover"); });
+    ["dragleave","dragend"].forEach(ev=> drop.addEventListener(ev, ()=> drop.classList.remove("dragover")));
+    drop.addEventListener("drop", e=>{ e.preventDefault(); drop.classList.remove("dragover"); if(e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener("change", e=>{ if(e.target.files?.[0]) handleFile(e.target.files[0]); });
+
+    function drawImageToCanvas(img){
+      imgCanvas.width = INPUT_SIZE; imgCanvas.height = INPUT_SIZE;
+      imgCtx.clearRect(0,0,INPUT_SIZE,INPUT_SIZE);
+      imgCtx.fillStyle = "#000"; imgCtx.fillRect(0,0,INPUT_SIZE,INPUT_SIZE);
+      const scale = Math.min(INPUT_SIZE/img.width, INPUT_SIZE/img.height);
+      const w = img.width*scale, h = img.height*scale;
+      const x = (INPUT_SIZE-w)/2, y = (INPUT_SIZE-h)/2;
+      imgCtx.imageSmoothingEnabled = true;
+      imgCtx.drawImage(img, x, y, w, h);
+    }
+
+    async function handleFile(file){
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = async ()=>{
+        drawImageToCanvas(img);
+        brainMask = computeBrainMask(imgCtx);  // ⬅️ maska mózgu 0..1
+
+        heatCtx.clearRect(0,0,INPUT_SIZE,INPUT_SIZE);
+        cachedMap = null; riseToken++; riseBusy = false;
+        hasImage = true;
+        msg.textContent = session ? "Analizuję (klasyfikacja)…" : "Obraz wczytany. Czekam na model…";
+        chipHeat.innerHTML = `<span class="dot"></span> Heatmapa: ${session ? 'porusz suwakiem, aby policzyć' : 'czeka na model'}`;
+        if (session) runAll();
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = ()=>{ msg.textContent = "Nie udało się wczytać obrazu."; };
+      img.src = url;
+    }
+
+    function tensorFromCanvas(ctx){
+      const { data } = ctx.getImageData(0,0,INPUT_SIZE,INPUT_SIZE);
+      const mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225];
+      const chw = new Float32Array(3*INPUT_SIZE*INPUT_SIZE);
+      let p=0;
+      for(let y=0;y<INPUT_SIZE;y++){
+        for(let x=0;x<INPUT_SIZE;x++,p++){
+          const r=data[p*4]/255, g=data[p*4+1]/255, b=data[p*4+2]/255;
+          const i=y*INPUT_SIZE+x;
+          chw[0*INPUT_SIZE*INPUT_SIZE+i]=(r-mean[0])/std[0];
+          chw[1*INPUT_SIZE*INPUT_SIZE+i]=(g-mean[1])/std[1];
+          chw[2*INPUT_SIZE*INPUT_SIZE+i]=(b-mean[2])/std[2];
+        }
+      }
+      return new ort.Tensor('float32', chw, [1,3,INPUT_SIZE,INPUT_SIZE]);
+    }
+
+    function softmax(logits){
+      const out = new Float32Array(logits.length); let max=-Infinity;
+      for(let i=0;i<logits.length;i++){ const v=logits[i]; out[i]=v; if(v>max) max=v; }
+      let sum=0; for(let i=0;i<out.length;i++){ out[i]=Math.exp(out[i]-max); sum+=out[i]; }
+      for(let i=0;i<out.length;i++) out[i]/=sum;
+      return out;
+    }
+
+    async function forward(ctx){
+      const t = tensorFromCanvas(ctx);
+      const out = await session.run({ [session.inputNames[0]]: t });
+      // Zostawiamy surowe logity – stabilniejszy sygnał do RISE
+      return out[session.outputNames[0]].data;
+    }
+
+    /* ===== KLASYFIKACJA ===== */
+    async function runAll(){
+      try{
+        chipHeat.innerHTML = `<span class="dot"></span> Heatmapa: porusz suwakiem, aby policzyć`;
+        const t0 = performance.now();
+        const logits = await forward(imgCtx);
+        const probs = softmax(logits);
+        renderResults(probs);
+        let topIdx = 0; for(let i=1;i<probs.length;i++){ if(probs[i]>probs[topIdx]) topIdx=i; }
+        lastTopIdx = topIdx;
+        const t1 = performance.now();
+        const maxP = Math.max(...probs);
+        timingEl.textContent = `Klasyfikacja: ${(t1-t0).toFixed(0)} ms`;
+        msg.textContent = (maxP<0.35) ? "Niska pewność — spróbuj inny slajd. Porusz suwakiem, aby policzyć heatmapę." : "Porusz suwakiem, aby policzyć heatmapę.";
+      }catch(err){
+        console.error(err);
+        msg.textContent = "Błąd inferencji: " + err.message;
+        chipHeat.innerHTML = `<span class="dot err"></span> Heatmapa: błąd`;
+      }
+    }
+
+    function renderResults(probs){
+      let maxIdx=0; for(let i=1;i<probs.length;i++){ if(probs[i]>probs[maxIdx]) maxIdx=i; }
+      topLabel.textContent = PRETTY[LABELS[maxIdx]];
+      topPct.textContent = (probs[maxIdx]*100).toFixed(1)+"%";
+      topCard.style.display="flex"; barsWrap.innerHTML="";
+      const UI_ORDER = ["Non_Demented","Very_Mild_Demented","Mild_Demented","Moderate_Demented"];
+      UI_ORDER.forEach(key=>{
+        const i = LABELS.indexOf(key); const pct=(probs[i]*100).toFixed(1); const color=COLORS[key];
+        const bar = document.createElement("div"); bar.className="bar";
+        bar.innerHTML = `<div class="bar-head"><span>${PRETTY[key]}</span><span>${pct}%</span></div>
+          <div class="meter"><div style="background:${color}; width:${pct}%">${pct>=12?pct+"%":""}</div></div>`;
+        barsWrap.appendChild(bar);
+      });
+    }
+
+    /* ===== RISE: liczymy dopiero przy ruchu suwaka, chunkowo ===== */
+    alphaRange.addEventListener("input", onTweak);
+    smoothRange.addEventListener("input", onTweak);
+
+    function onTweak(){
+      alphaVal.textContent = (+alphaRange.value/100).toFixed(2);
+      smoothVal.textContent = `${smoothRange.value} px`;
+      heatCanvas.style.filter = `blur(${smoothRange.value}px)`;
+
+      if (!session || !hasImage) return;
+      if (cachedMap){ paintOverlay(cachedMap); return; }
+      if (!riseBusy) startRise();
+    }
+
+    async function startRise(){
+      riseBusy = true;
+      const myToken = ++riseToken;
+      chipHeat.innerHTML = `<span class="dot"></span> Heatmapa: obliczanie (0%)…`;
+      try{
+        const t0 = performance.now();
+        const A = await computeRiseMapProgressive(lastTopIdx, myToken, (done,total)=>{
+          chipHeat.innerHTML = `<span class="dot"></span> Heatmapa: obliczanie (${Math.round(100*done/total)}%)…`;
+        });
+        if (myToken !== riseToken) return;
+        cachedMap = A;
+        paintOverlay(cachedMap);
+        const t1 = performance.now();
+        chipHeat.innerHTML = `<span class="dot ok"></span> Heatmapa: gotowa (RISE)`;
+        timingEl.textContent += ` · Heatmapa: ${(t1-t0).toFixed(0)} ms`;
+        msg.textContent = "Gotowe.";
+      }catch(err){
+        if (myToken === riseToken){
+          chipHeat.innerHTML = `<span class="dot err"></span> Heatmapa: błąd`;
+          msg.textContent = "Błąd heatmapy: " + err.message;
+          console.error(err);
+        }
+      }finally{
+        if (myToken === riseToken) riseBusy = false;
+      }
+    }
+
+	// === MINIMAL RISE DEBUG ===
+	// === RISE jak w Pythonie: Δ = p_base - p_masked, A = Σ(Δ·M)/ΣM ===
+	async function computeRiseMapProgressive(targetIdx, token, onProgress){
+	  const w = INPUT_SIZE, h = INPUT_SIZE;
+
+	  // parametry "python-like" (możesz podstroić)
+	  const N_MASKS = 640;      // 512–1000 daje stabilne mapy
+	  const RES     = 10;       // mała siatka maski (9–12)
+	  const KEEP_P  = 0.5;      // Bernoulli
+	  const CHUNK   = 8;        // nie blokuj UI
+
+	  // 1) bazowe prawdopodobieństwo klasy
+	  const baseProb = softmax(await forward(imgCtx))[targetIdx];
+
+	  // 2) przygotowanie buforów
+	  const src = imgCtx.getImageData(0,0,w,h).data;
+	  const neutral = [Math.round(0.485*255), Math.round(0.456*255), Math.round(0.406*255)];
+	  const acc   = new Float32Array(w*h);   // Σ Δ·M
+	  const cover = new Float32Array(w*h);   // Σ M
+	  const buf   = new Uint8ClampedArray(w*h*4);
+
+	  // 3) pętle masek
+	  let done = 0;
+	  while (done < N_MASKS){
+		const upto = Math.min(done + CHUNK, N_MASKS);
+
+		for (let n = done; n < upto; n++){
+		  if (token !== riseToken) throw new Error("aborted");
+
+		  // losowa mała maska → bilinear + jitter do H×W
+		  const small = new Float32Array(RES*RES);
+		  for (let i=0;i<small.length;i++) small[i] = (Math.random() < KEEP_P) ? 1 : 0;
+		  const mask = upsampleBilinearJitter(small, RES, w, h); // masz już tę funkcję
+
+		  // złożenie obrazu: m*src + (1-m)*neutral
+		  for (let i=0;i<w*h;i++){
+			const m = mask[i], r=src[i*4], g=src[i*4+1], b=src[i*4+2];
+			buf[i*4]   = m*r + (1-m)*neutral[0];
+			buf[i*4+1] = m*g + (1-m)*neutral[1];
+			buf[i*4+2] = m*b + (1-m)*neutral[2];
+			buf[i*4+3] = 255;
+		  }
+		  workCtx.putImageData(new ImageData(buf, w, h), 0, 0);
+
+		  // prawdopodobieństwo po maskowaniu
+		  const pMasked = softmax(await forward(workCtx))[targetIdx];
+
+		  // Δ dodatnie, gdy maska obniża p_k ⇒ region WAŻNY (pójdzie w "ciepłe" kolory)
+		  const delta = baseProb - pMasked;
+
+		  // akumulacja
+		  for (let i=0;i<w*h;i++){
+			const m = mask[i];
+			acc[i]   += delta * m;
+			cover[i] += m;
+		  }
+		}
+
+		done = upto;
+		if (onProgress) onProgress(done, N_MASKS);
+		await new Promise(requestAnimationFrame); // nie blokuj UI
+	  }
+
+	  // 4) normalizacja przez pokrycie (pikselowo)
+	  const A = new Float32Array(w*h);
+	  for (let i=0;i<w*h;i++) A[i] = acc[i] / (cover[i] + 1e-6);
+
+	  // 5) lekkie wygładzenie (redukcja szumu blokowego)
+	  const smooth = boxBlurFloat(A, w, h, 2);  // masz już boxBlurFloat
+	  for (let i=0;i<A.length;i++) A[i] = smooth[i];
+
+	  // 6) robust scaling – skala wg percentyla 99 z |A|, potem obcięcie do [-1,1]
+	  const p99 = percentileAbs(A, 99);
+	  const s   = (p99 > 1e-8) ? p99 : 1.0;
+	  for (let i=0;i<A.length;i++){
+		let v = A[i] / s;
+		if (v >  1) v =  1;
+		if (v < -1) v = -1;
+		A[i] = v;
+	  }
+
+	  // 7) próg + gamma — wycisz słabe wartości, zostaw wyspy
+	  const TAU=0.12, GAMMA=1.8;  // (0.10–0.18) i (1.6–2.2) do strojenia
+	  for (let i=0;i<A.length;i++){
+		const sgn = Math.sign(A[i]), u = Math.abs(A[i]);
+		A[i] = sgn * (u <= TAU ? 0 : Math.pow((u-TAU)/(1-TAU), GAMMA));
+	  }
+
+	  return A;
+	}
+
+	// percentyl z |arr|
+	function percentileAbs(arr, q){
+	  const t = Array.from(arr, v => Math.abs(v)).sort((a,b)=>a-b);
+	  const pos = (q/100) * (t.length - 1);
+	  const lo = Math.floor(pos), hi = Math.min(t.length-1, lo+1), frac = pos - lo;
+	  return t[lo]*(1-frac) + t[hi]*frac;
+	}
+
+
+    // bilinear + jitter (miękkie maski, bez kratki)
+    function upsampleBilinearJitter(small, res, W, H){
+      const out = new Float32Array(W*H);
+      const ox = Math.random(); const oy = Math.random(); // jitter w [0,1)
+      for(let y=0;y<H;y++){
+        const sy = ( (y + oy) * res / H ) - 0.5;
+        const y0 = Math.max(0, Math.min(res-1, Math.floor(sy)));
+        const y1 = Math.max(0, Math.min(res-1, y0 + 1));
+        const wy = sy - Math.floor(sy);
+        for(let x=0;x<W;x++){
+          const sx = ( (x + ox) * res / W ) - 0.5;
+          const x0 = Math.max(0, Math.min(res-1, Math.floor(sx)));
+          const x1 = Math.max(0, Math.min(res-1, x0 + 1));
+          const wx = sx - Math.floor(sx);
+          const v00 = small[y0*res + x0], v01 = small[y0*res + x1];
+          const v10 = small[y1*res + x0], v11 = small[y1*res + x1];
+          const v0 = v00*(1-wx) + v01*wx;
+          const v1 = v10*(1-wx) + v11*wx;
+          out[y*W + x] = v0*(1-wy) + v1*wy;
+        }
+      }
+      return out;
+    }
+	function paintOverlay(A){
+	  const w = INPUT_SIZE, h = INPUT_SIZE;
+	  const ctx = heatCtx;                               // rysujemy na właściwym canvasie
+	  const img = ctx.createImageData(w, h);
+	  const buf = img.data;
+
+	  // maska (jeśli policzona w handleFile) i alfa z suwaka
+	  const mask = (typeof brainMask !== "undefined" && brainMask) ? brainMask : null;
+	  const alpha = Math.max(0, Math.min(1, (+alphaRange.value || 75)/100));
+
+	  // --- centrowanie względem mediany w obrębie maski (eliminuje "całe czerwone") ---
+	  const vals = [];
+	  if (mask){
+		for (let i=0;i<A.length;i++) if (mask[i] > 0.05) vals.push(A[i]);
+	  } else {
+		for (let i=0;i<A.length;i++) vals.push(A[i]);
+	  }
+	  vals.sort((a,b)=>a-b);
+	  const mid = vals.length
+		? (vals.length % 2 ? vals[(vals.length-1)>>1] : 0.5*(vals[vals.length/2-1] + vals[vals.length/2]))
+		: 0;
+
+	  // skala = 99. percentyl z |A - mediana| (symetrycznie wokół 0)
+	  const dev = vals.map(v => Math.abs(v - mid)).sort((a,b)=>a-b);
+	  const s = dev.length ? dev[Math.floor(0.99*(dev.length-1))] || 1 : 1;
+
+	  // rysowanie: [-1,1] → paleta niebieski↔biały↔czerwony, alfa z suwaka * maska
+	  for (let i=0;i<w*h;i++){
+		let v = (A[i] - mid) / s;
+		if (v >  1) v =  1;
+		if (v < -1) v = -1;
+		const t = 0.5*(v + 1);               // 0..1
+
+		const [r,g,b] = bwrColor(t);
+		const m = mask ? Math.max(0, Math.min(1, mask[i])) : 1;
+
+		const k = i*4;
+		buf[k]   = r;
+		buf[k+1] = g;
+		buf[k+2] = b;
+		buf[k+3] = Math.round(255 * alpha * m);
+	  }
+	  ctx.putImageData(img, 0, 0);
+	}
+
+	// rozbieżna paleta: blue → white → red
+	function bwrColor(t){
+	  t = t<0?0:(t>1?1:t);
+	  if (t < 0.5){
+		const u = t/0.5;
+		return [Math.round(255*u), Math.round(255*u), 255];
+	  } else {
+		const u = (t-0.5)/0.5;
+		return [255, Math.round(255*(1-u)), Math.round(255*(1-u))];
+	  }
+	}
+
+
+function jetColor(v) {
+    const fourValue = 4 * v;
+    const r = Math.min(255, Math.max(0, Math.round(255 * Math.min(fourValue - 1.5, -fourValue + 4.5))));
+    const g = Math.min(255, Math.max(0, Math.round(255 * Math.min(fourValue - 0.5, -fourValue + 3.5))));
+    const b = Math.min(255, Math.max(0, Math.round(255 * Math.min(fourValue + 0.5, -fourValue + 2.5))));
+    return [r, g, b];
+}
+
+   
+function clamp01(v){ return v < 0 ? 0 : (v > 1 ? 1 : v); }
+
+
+// Google Turbo colormap (ciągła, wiele odcieni)
+function turboColor(x){
+  x = Math.max(0, Math.min(1, x));
+  const x2 = x*x, x3 = x2*x, x4 = x3*x, x5 = x4*x;
+  // współczynniki wg oficjalnej aproksymacji (Anton Mikhailov / Google)
+  const r = 0.13572138 + 4.61539260*x - 42.66032258*x2 + 132.13108234*x3 - 152.94239396*x4 + 59.28637943*x5;
+  const g = 0.09140261 + 2.19418839*x +   4.84296658*x2 -  14.18503333*x3 +   4.27729857*x4 +  2.82956604*x5;
+  const b = 0.10667330 + 12.64194608*x - 60.58204836*x2 + 122.91192416*x3 - 121.88925135*x4 + 43.92409591*x5;
+  return [
+    Math.round(255 * Math.max(0, Math.min(1, r))),
+    Math.round(255 * Math.max(0, Math.min(1, g))),
+    Math.round(255 * Math.max(0, Math.min(1, b))),
+  ];
+}
+
+
+    /* ====== Brain mask: Otsu + morfologia + największa składowa + feather ====== */
+    function computeBrainMask(ctx){
+      const w = INPUT_SIZE, h = INPUT_SIZE;
+      const src = ctx.getImageData(0,0,w,h).data;
+
+      const lum = new Uint8Array(w*h);
+      const hist = new Uint32Array(256);
+      for (let i=0;i<w*h;i++){
+        const r=src[i*4], g=src[i*4+1], b=src[i*4+2];
+        const y = (0.299*r + 0.587*g + 0.114*b) | 0;
+        lum[i] = y; hist[y]++;
+      }
+      const N=w*h; let sum=0; for(let t=0;t<256;t++) sum += t*hist[t];
+      let sumB=0, wB=0, maxVar=-1, thr=120;
+      for(let t=0;t<256;t++){
+        wB += hist[t]; if(!wB) continue;
+        const wF = N - wB; if(!wF) break;
+        sumB += t*hist[t];
+        const mB = sumB/wB, mF = (sum-sumB)/wF;
+        const v = wB*wF*(mB-mF)*(mB-mF);
+        if (v>maxVar){ maxVar=v; thr=t; }
+      }
+      const bin = new Uint8Array(w*h);
+      for (let i=0;i<N;i++) bin[i] = lum[i] > thr ? 1 : 0;
+
+      const closed = morphClose(bin, w, h, 2);
+      const keep = largestComponent(closed, w, h);
+      const soft = boxBlurFloat(keep, w, h, 2);
+      return soft; // Float32Array 0..1
+    }
+    function morphClose(src, w, h, rad){
+      const d = morphDilate(src, w, h, rad);
+      return morphErode(d, w, h, rad);
+    }
+    function morphDilate(src, w, h, rad){
+      const out = new Uint8Array(w*h);
+      for(let y=0;y<h;y++){
+        for(let x=0;x<w;x++){
+          let on = 0;
+          for(let dy=-rad;dy<=rad && !on;dy++){
+            const yy = y+dy; if(yy<0||yy>=h) continue;
+            for(let dx=-rad;dx<=rad;dx++){
+              const xx=x+dx; if(xx<0||xx>=w) continue;
+              if (src[yy*w+xx]){ on=1; break; }
+            }
+          }
+          out[y*w+x] = on;
+        }
+      }
+      return out;
+    }
+    function morphErode(src, w, h, rad){
+      const out = new Uint8Array(w*h);
+      for(let y=0;y<h;y++){
+        for(let x=0;x<w;x++){
+          let on = 1;
+          for(let dy=-rad;dy<=rad && on;dy++){
+            const yy=y+dy; if(yy<0||yy>=h){ on=0; break; }
+            for(let dx=-rad;dx<=rad;dx++){
+              const xx=x+dx; if(xx<0||xx>=w){ on=0; break; }
+              if (!src[yy*w+xx]){ on=0; break; }
+            }
+          }
+          out[y*w+x] = on;
+        }
+      }
+      return out;
+    }
+    function largestComponent(bin, w, h){
+      const lab = new Int32Array(w*h).fill(-1);
+      let bestIdx=-1, bestSize=0, cur=0;
+      const qx=new Int32Array(w*h), qy=new Int32Array(w*h);
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        const i=y*w+x;
+        if(!bin[i] || lab[i]>=0) continue;
+        let head=0, tail=0; qx[tail]=x; qy[tail]=y; tail++; lab[i]=cur; let size=0;
+        while(head<tail){
+          const cx=qx[head], cy=qy[head]; head++; size++;
+          for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+            const nx=cx+dx, ny=cy+dy; if(nx<0||ny<0||nx>=w||ny>=h) continue;
+            const j=ny*w+nx; if(bin[j] && lab[j]<0){ lab[j]=cur; qx[tail]=nx; qy[tail]=ny; tail++; }
+          }
+        }
+        if(size>bestSize){ bestSize=size; bestIdx=cur; }
+        cur++;
+      }
+      const out = new Uint8Array(w*h);
+      for(let i=0;i<w*h;i++) out[i] = (lab[i]===bestIdx)?1:0;
+      return out;
+    }
+
+    // Box-blur dla Float32 (używamy jako feather i „LP” dla unsharp)
+    function boxBlurFloat(src, w, h, r){
+      const f2 = new Float32Array(w*h);
+      // poziomo
+      for(let y=0;y<h;y++){
+        let sum=0;
+        for(let x=0;x<w;x++){
+          if (x===0){
+            for(let k=-r;k<=r;k++){ const xx=Math.max(0, Math.min(w-1, k)); sum += src[y*w+xx]; }
+          }else{
+            const x1=Math.max(0,x-r-1), x2=Math.min(w-1,x+r);
+            sum += src[y*w+x2] - src[y*w+x1];
+          }
+          f2[y*w+x] = sum / (2*r+1);
+        }
+      }
+      // pionowo
+      const out = new Float32Array(w*h);
+      for(let x=0;x<w;x++){
+        let sum=0;
+        for(let y=0;y<h;y++){
+          if (y===0){
+            for(let k=-r;k<=r;k++){ const yy=Math.max(0, Math.min(h-1, k)); sum += f2[yy*w+x]; }
+          }else{
+            const y1=Math.max(0,y-r-1), y2=Math.min(h-1,y+r);
+            sum += f2[y2*w+x] - f2[y1*w+x];
+          }
+          out[y*w+x] = sum / (2*r+1);
+        }
+      }
+      return out;
+    }
+  </script>
+</body>
+</html>
