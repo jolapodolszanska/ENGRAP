@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# ENGRAP (HybridCNN) + DataModule + metryki do CSV + Grad-CAM grid (2x4) — gotowy skrypt
-
 import os, time, cv2, numpy as np, pandas as pd
 import torch, torch.nn as nn, torch.nn.functional as F
 import pytorch_lightning as pl
@@ -17,8 +14,6 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.metrics import confusion_matrix
 import itertools
 
-
-# ======================== KONFIG ========================
 DATASET_PATH = r"F:/Badania/embedded/Dataset"   # <- tu ustaw swój katalog ImageFolder
 IMG_SIZE     = 299
 BATCH_SIZE   = 32
@@ -31,7 +26,6 @@ GRID_PNG     = "engrap_gradcam_grid.png"
 torch.set_float32_matmul_precision("high")
 torch.backends.cudnn.benchmark = True
 
-# ==================== DataModule (ImageFolder) ====================
 class CustomDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str,
                  img_size: int = IMG_SIZE,
@@ -107,7 +101,6 @@ class CustomDataModule(pl.LightningDataModule):
         return DataLoader(self.test_ds, batch_size=self.batch_size, shuffle=False,
                           num_workers=self.num_workers, pin_memory=True, persistent_workers=True)
 
-# ==================== FocalLoss (opcjonalnie) ====================
 class FocalLoss(nn.Module):
     def __init__(self, alpha=1.0, gamma=2.0, weight=None):
         super().__init__()
@@ -121,7 +114,6 @@ class FocalLoss(nn.Module):
         loss = self.alpha * (1-pt)**self.gamma * ce
         return loss.mean()
 
-# ==================== Capsule Layer (routing) ====================
 class CapsuleLayer(nn.Module):
     def __init__(self, in_capsules, in_dim, out_capsules, out_dim, num_routes=3):
         super().__init__()
@@ -151,7 +143,6 @@ class CapsuleLayer(nn.Module):
                 b = b + (u_hat * v).sum(-1, keepdim=True)
         return v.squeeze(1)                        # [B,Cout,Dout]
 
-# ==================== ENGRAP: HybridCNN (Lightning) ====================
 class HybridCNN(pl.LightningModule):
     """
     ResNet50 (GAP 2048) -> CapsuleLayer(10×16) -> Transformer(L=2,H=4,d=16) -> FC(4)
@@ -216,7 +207,6 @@ class HybridCNN(pl.LightningModule):
         logits = self.fc2(h)                                            # [B,4]
         return logits
 
-    # --- Lightning steps ---
     def training_step(self, batch, batch_idx):
         x, y = batch
         # upewnij się, że wagi loss są na tym samym urządzeniu
@@ -321,8 +311,7 @@ class HybridCNN(pl.LightningModule):
         opt = torch.optim.AdamW(self.parameters(), lr=1e-4, weight_decay=1e-4)
         sch = torch.optim.lr_scheduler.StepLR(opt, step_size=10, gamma=0.1)
         return [opt], [sch]
-
-# ==================== Grad-CAM w stylu z obrazków ====================
+        
 class GradCAM:
     def __init__(self, model: nn.Module, target_layer: nn.Module):
         self.model = model.eval()
@@ -387,8 +376,7 @@ def make_gradcam_grid_engrap(model: nn.Module, val_loader: DataLoader,
     with torch.no_grad():
         logits = model(images)
         preds = logits.argmax(dim=1)
-
-    # styl: ciemne tło + „jet” na górze
+        
     import matplotlib
     cmap = matplotlib.colormaps.get("jet")
 
@@ -427,21 +415,17 @@ def make_gradcam_grid_engrap(model: nn.Module, val_loader: DataLoader,
     plt.close(fig)
     print(f"[OK] Zapisano heatmapy: {save_path}")
 
-# ============================== MAIN ==============================
 def main():
     print("cuda.is_available():", torch.cuda.is_available())
     if torch.cuda.is_available():
         print("GPU:", torch.cuda.get_device_name(0))
-
-    # --- Data ---
+        
     assert os.path.isdir(DATASET_PATH), f"Brak katalogu: {DATASET_PATH}"
     dm = CustomDataModule(DATASET_PATH)
     dm.setup("fit")
-
-    # --- Model ---
+    
     model = HybridCNN()
 
-    # --- Trener + callbacki ---
     ckpt = ModelCheckpoint(
         dirpath="checkpoints",
         filename="captrad-{epoch:02d}-{val_f1:.4f}",
@@ -463,13 +447,11 @@ def main():
         precision="32-true"
     )
 
-    # --- Trening + walidacja (zapis CSV + LaTeX dzieje się w on_validation_epoch_end) ---
     t0 = time.time()
     trainer.fit(model, datamodule=dm)
     trainer.validate(model, datamodule=dm)
     print(f"Czas treningu: {(time.time()-t0)/3600:.2f} h")
 
-    # --- Wczytanie najlepszego checkpointu (Lightning way) ---
     best_ckpt_path = ckpt.best_model_path
     if best_ckpt_path and os.path.isfile(best_ckpt_path):
         print(f"Załadowano best ckpt: {best_ckpt_path}")
@@ -483,11 +465,9 @@ def main():
     trainer.validate(model, datamodule=dm)
     print(f"Czas treningu: {(time.time()-t0)/3600:.2f} h")
 
-    # DODAJ TU zapisywanie modelu:
     torch.save(model, 'engrap_model.pth')
     print("Model saved to: engrap_model.pth")
 
-    # --- Wczytanie najlepszego checkpointu (Lightning way) ---
     best_ckpt_path = ckpt.best_model_path
     if best_ckpt_path and os.path.isfile(best_ckpt_path):
         print(f"Załadowano best ckpt: {best_ckpt_path}")
@@ -514,3 +494,4 @@ if __name__ == "__main__":
     import multiprocessing as mp
     mp.freeze_support()  # Windows + num_workers>0
     main()
+
