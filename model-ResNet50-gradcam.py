@@ -265,7 +265,6 @@ def main():
 
     trainer.validate(model, val_loader)
 
-    # DODAJ TU:
     torch.save(model, 'resnet50_model.pth')
     print("Model saved to: resnet50_model.pth")
 
@@ -274,3 +273,4 @@ if __name__ == "__main__":
     import multiprocessing as mp
     mp.freeze_support()   # Windows + num_workers>0
     main()
+
