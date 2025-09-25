@@ -14,13 +14,12 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.metrics import confusion_matrix
 import itertools
 
-# ========================== KONFIG ==========================
-DATA_DIR   = r"F:\Badania\embedded\Dataset"   # ImageFolder: podkatalogi = klasy
-IMG_SIZE   = 299                               # szybkie i bezpieczne dla CapsNet
+DATA_DIR   = r"F:\Badania\embedded\Dataset"  
+IMG_SIZE   = 299                               
 BATCH_SIZE = 32
 MAX_EPOCHS = 50
 N_CLASSES  = 4
-USE_IMAGENET_NORM = False                     # MRI: zwykle False
+USE_IMAGENET_NORM = False                     
 OUT_METRICS_CSV = "val_metrics_capsnet.csv"
 OUT_GRID_PNG    = "capsnet_gradcam_grid.png"
 
@@ -28,7 +27,6 @@ OUT_GRID_PNG    = "capsnet_gradcam_grid.png"
 torch.set_float32_matmul_precision("high")
 torch.backends.cudnn.benchmark = True
 
-# ==================== Transformy i denormalizacja ====================
 if USE_IMAGENET_NORM:
     MEAN = [0.485, 0.456, 0.406]
     STD  = [0.229, 0.224, 0.225]
@@ -49,7 +47,6 @@ else:
     def denorm(x: torch.Tensor) -> torch.Tensor:
         return x.clamp(0,1)
 
-# ==================== Capsule Layer z routowaniem ====================
 class CapsuleLayer(nn.Module):
     def __init__(self, in_capsules, in_dim, out_capsules, out_dim, routing_iters=1):
         super().__init__()
@@ -81,7 +78,6 @@ class CapsuleLayer(nn.Module):
         norm = torch.norm(s, dim=-1, keepdim=True)
         return (norm**2 / (1.0 + norm**2)) * (s / (norm + 1e-8))
 
-# ==================== PureCapsNet (Lightning) — szybka wersja ====================
 class PureCapsNet(pl.LightningModule):
     def __init__(self, n_classes=N_CLASSES, lr=3e-4):
         super().__init__()
@@ -199,7 +195,6 @@ class PureCapsNet(pl.LightningModule):
         opt = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=1e-2)
         return opt
 
-# ==================== Grad-CAM (styl ENGRAP) — autocast OFF ====================
 class GradCAM:
     def __init__(self, model: nn.Module, target_layer: nn.Module):
         self.model = model.eval()
@@ -346,20 +341,17 @@ def main():
     trainer.fit(model, train_loader, val_loader)
     trainer.validate(model, val_loader)
 
-    # --- PRZYGOTOWANIE DO GRAD-CAM (model na GPU, FP32, z gradientami) ---
     model.eval()
     model.to(device)
     model.float()
     for p in model.parameters():
         p.requires_grad_(True)
 
-    # --- HEATMAPY 2x4 ---
     make_gradcam_grid_capsnet(model, val_loader, save_path=OUT_GRID_PNG, n_images=8)
     print("Done.")
     
     trainer.validate(model, val_loader)
 
-    # DODAJ TU:
     torch.save(model, 'capsnet_model.pth')
     print(f"Model saved to: capsnet_model.pth")
 
@@ -369,3 +361,4 @@ if __name__ == "__main__":
     import multiprocessing as mp
     mp.freeze_support()  # wymagane na Windows przy num_workers>0
     main()
+
