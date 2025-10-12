@@ -18,12 +18,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-DATASET_PATH = r"F:/Badania/embedded/Dataset"   # <- tu ustaw swój katalog ImageFolder
+DATASET_PATH = r"F:/Badania/embedded/Dataset"  
 IMG_SIZE     = 299
 BATCH_SIZE   = 32
 NUM_WORKERS  = 8
 MAX_EPOCHS   = 50
-USE_IMAGENET_NORM = True           # ResNet50 lubisz z ImageNet mean/std
+USE_IMAGENET_NORM = True          
 VAL_CSV_PATH = "engrap_val_metrics.csv"
 GRID_PNG     = "engrap_gradcam_grid.png"
 
