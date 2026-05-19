@@ -74,5 +74,104 @@ The MRI slice is overlaid with AAL3v1-based anatomical regions, and the accompan
 
 # References
 
-[1] Podolszanska, J. (2025). "Leveraging Deep Q-Network Agents with Dynamic Routing Mechanisms in Convolutional Neural Networks for Enhanced and Reliable Classification of Alzheimer's Disease from MRI Scans."
+[1] World Health Organization. Dementia. WHO Fact Sheet. Accessed March 2025
+(2025). https://www.who.int/news-room/fact-sheets/detail/dementia
+
+[2] Wong, W., Jiang, Y., Chen, H., Jiang, Y., Shi, M., Wu, Z., Zhang, W. The
+global macroeconomic burden of Alzheimer’s disease and other dementias. The
+Lancet Global Health 12(9), 1476–1487 (2024). https://doi.org/10.1016/S2214-
+109X(24)00264-X
+
+[3] Rahman, M.M., Ahmed, S.T., Hossain, M.A., Rahman, M.M. Early detection of
+Alzheimer’s disease: A review of machine learning techniques. Diagnostics 13(22),
+3428 (2023). https://doi.org/10.3390/diagnostics13223428
+
+[4] Lee, G., Nho, K., Kang, B., Sohn, K.-A., Kim, D. Identification of Alzheimer’s
+disease using a CNN model based on T1-weighted MRI. Scientific Reports 10(1),
+22252 (2020). https://doi.org/10.1038/s41598-020-79243-9
+
+[5] Gharibi, H., Rezaei, M., Ferdowsi, S. An efficient method for early Alzheimer’s
+disease detection using deep CNNs. Frontiers in Artificial Intelligence 8, 1563016
+(2025). https://doi.org/10.3389/frai.2025.1563016
+
+[6] Salahuddin, Z., Woodruff, H.C., Chatterjee, A., Lambin, P. Explainable AI in
+medical imaging: Saliency-based XAI approaches. European Journal of Radiology
+162, 110787 (2023). https://doi.org/10.1016/j.ejrad.2023.110787
+
+[7] Velden, B.H.M., Kuijf, H.J., Gilhuijs, K.G.A., Viergever, M.A. Explaining
+explainability: The role of XAI in medical imaging. European Journal of
+Radiology 172, 111339 (2024). https://doi.org/10.1016/j.ejrad.2024.111339
+
+[8] Nohara, Y., Matsumoto, K., Soejima, H., Nakashima, N. Evaluating XAI
+techniques in chest radiology imaging. PLOS ONE 19(10), e0308758 (2024).
+https://doi.org/10.1371/journal.pone.0308758
+
+[9] Alzheimer’s Association. 2024 Alzheimer’s disease facts and figures. Alzheimer’s
+& Dementia 20(5), 3708–3821 (2024). https://doi.org/10.1002/alz.13809
+
+[10] Aksoy, S., Daou, A. An explainable web-based diagnostic system for Alzheimer’s
+disease using XRAI. bioRxiv (2025). https://doi.org/10.1101/2025.08.16.670652
+
+[11] Aksoy, S., Demircioglu, P., Bogrekci, I. A web-deployed explainable AI system for brain tumor diagnosis. Neurology International 17(8), 121 (2025).
+https://doi.org/10.3390/neurolint17080121
+
+[12] Li, Z., Dib, O. Empowering brain tumor diagnosis through explainable deep
+learning. Machine Learning and Knowledge Extraction 6(4), 2248–2281 (2024).
+https://doi.org/10.3390/make6040111
+
+[13] Buga, R., Buzea, C.G., Agop, M., Ochiuz, L., Vasincu, D., Popa, O.,
+Rusu, D.I., Stirban, I., Eva, L. Streamlit application and deep learning model for brain metastasis monitoring. Biomedicines 13(2), 423 (2025).
+https://doi.org/10.3390/biomedicines13020423
+
+[14] Santhosh, T.R.S., Mohanty, S.N., Pradhan, N.R., Khan, T., Derbali, M. Neurovision: A deep learning driven web application for brain tumour detection. Digital
+Health (2025). https://doi.org/10.1177/20552076251333195
+
+[15] Verdú-Díaz, J., Bolano-Díaz, C., et al. Myo-guide: A machine learning-based web
+application for neuromuscular disease diagnosis. Journal of Cachexia, Sarcopenia
+and Muscle (2025). https://doi.org/10.1002/jcsm.13815
+
+[16] Aksoy, S. SeruNet: A unified multi-modal AI system for neurological disorder
+detection. IJFMR 7(4) (2025). Article ID: IJFMR250452891
+
+[17] Alp, S., Akan, T., Bhuiyan, M.S., Disbrow, E.A., Conrad, S.A., Vanchiere, J.A.,
+Kevil, C.G., Bhuiyan, M.A.N. Joint transformer architecture in brain 3D MRI
+classification. Scientific Reports 14, 8996 (2024). https://doi.org/10.1038/s41598-
+024-59578-3
+
+[18] Dessain, Q., Delinte, N., Hanseeuw, B., Dricot, L., Macq, B. Leveraging Swin
+Transformer for enhanced diagnosis of Alzheimer’s disease. arXiv preprint (2025).
+arXiv:2507.09996
+
+[19] Petersen, R.C., Aisen, P.S., Beckett, L.A., Donohue, M.C., Gamst, A.C., Harvey,
+D.J., Jack Jr., C.R., Jagust, W.J., Shaw, L.M., Toga, A.W., Trojanowski, J.Q.,
+Weiner, M.W. ADNI: Clinical characterization. Neurology 74(3), 201–209 (2010).
+https://doi.org/10.1212/WNL.0b013e3181cb3e25
+
+[20] Reference under review. Details withheld for double-blind review (n.d.).
+
+[21] Folego, G., Weiler, M., Casseb, R.F., Pires, R., Rocha, A. Alzheimer’s disease
+detection through whole-brain 3D-CNN MRI. Frontiers in Bioengineering and
+Biotechnology 8, 534592 (2020). https://doi.org/10.3389/fbioe.2020.534592
+
+[22] Sabour, S., Frosst, N., Hinton, G.E. Dynamic routing between capsules. NeurIPS
+30, 3856–3866 (2017).
+
+[23] Rolls, E.T., Huang, C., Lin, C., Feng, J., Joliot, M. Automated anatomical
+labelling atlas 3. NeuroImage 206, 116189 (2020).
+
+[24] Fan, L., Li, H., Zhuo, J., Zhang, Y., Wang, J., Chen, L., Yang, Z., Chu, C., Xie, S.,
+Laird, A.R., Fox, P.T., Eickhoff, S.B., Yu, C., Jiang, T. The human brainnetome
+atlas. Cerebral Cortex 26(8), 3508–3526 (2016).
+
+[25] F. H. Saif, M. N. Al-Andoli, and W. M. Y. W. Bejuri, "Explainable AI for
+Alzheimer Detection: A Review of Current Methods and Applications," Applied
+Sciences, vol. 14, no. 22, p. 10121, 2024. doi: 10.3390/app142210121
+
+[26] D. Muhammad and M. Bendechache, "Unveiling the Black Box: A Systematic
+Review of Explainable Artificial Intelligence in Medical Image Analysis," Computational and Structural Biotechnology Journal, vol. 24, pp. 542–560, 2024. doi:
+10.1016/j.csbj.2024.08.005
+
+[27] S. Alp et al., "Joint Transformer Architecture in Brain 3D MRI Classification:
+Its Application in Alzheimer’s Disease Classification," Scientific Reports, vol. 14,
+p. 8996, 2024. doi: 10.1038/s41598-024-59578-3
 
