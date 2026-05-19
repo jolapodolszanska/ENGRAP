@@ -12,6 +12,17 @@ The system provides immediate results (top prediction, severity score), an inter
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/07b7b8b9-de23-4488-8a3e-6c93877c04f0" />
 
+Overview of the proposed HybridCNN architecture for 4-class Alzheimer’s disease classification using 2D MRI slices from the ADNI dataset.  
+The model combines ResNet50-based feature extraction with capsule representations and Transformer encoder layers, followed by late-fusion classification. The diagram also summarizes the training configuration, optimization settings, evaluation metrics, and approximate parameter counts for individual model components.
+
+
+<img width="680" height="740" alt="image" src="https://github.com/user-attachments/assets/f9e55470-9070-459e-a62f-71ea15dc2006" />
+
+Overview of the proposed Signed RISE attribution pipeline applied to the HybridCNN model for explainable Alzheimer’s disease classification.  
+The framework consists of three stages: randomized mask generation, forward inference through the HybridCNN architecture, and accumulation and normalization of signed attribution maps. The diagram summarizes the masking strategy, Transformer-based inference process, attribution normalization, rendering procedure, and computational configuration used for Grad-CAM-style interpretability analysis.
+
+<img width="680" height="740" alt="image" src="https://github.com/user-attachments/assets/9bf47738-42aa-45c2-9139-4b5d731c9890" />
+
 This image shows a grid of 10 brain MRI scans (axial slices) with their classification results, representing an extension of the work from the publication "Leveraging Deep Q-Network Agents with Dynamic Routing Mechanisms in Convolutional Neural Networks for Enhanced and Reliable Classification of Alzheimer's Disease from MRI Scans" [1].
 Each scan displays:
 
@@ -54,6 +65,12 @@ Overall high accuracy across all severity levels with minimal confusion between 
 Strongest performance in moderate (Class 2) and severe (Class 3) categories
 Minor confusion primarily occurs between adjacent severity levels, which is clinically reasonable
 Total validation samples: 1,280 cases with excellent generalization.
+
+Example Grad-CAM visualization for a correctly classified NonDemented case.  
+The MRI slice is overlaid with AAL3v1-based anatomical regions, and the accompanying bar chart shows relative Grad-CAM attention within selected AD-relevant regions. In this example, the strongest attention is observed in temporal regions, while posterior regions such as the precuneus and posterior cingulate show lower activation.
+
+<img width="1545" height="637" alt="image" src="https://github.com/user-attachments/assets/e1e55ec1-aef1-4335-9379-18062a577be5" />
+
 
 # References
 
