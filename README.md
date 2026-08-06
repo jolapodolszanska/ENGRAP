@@ -146,7 +146,8 @@ D.J., Jack Jr., C.R., Jagust, W.J., Shaw, L.M., Toga, A.W., Trojanowski, J.Q.,
 Weiner, M.W. ADNI: Clinical characterization. Neurology 74(3), 201–209 (2010).
 https://doi.org/10.1212/WNL.0b013e3181cb3e25
 
-[20] Reference under review. Details withheld for double-blind review (n.d.).
+[20] Podolszanska, J. (2025, February). CapTrAD: A Hybrid Model for Alzheimer’s Disease Classification. 
+In International Conference on Agents and Artificial Intelligence (pp. 208-229). Cham: Springer Nature Switzerland.
 
 [21] Folego, G., Weiler, M., Casseb, R.F., Pires, R., Rocha, A. Alzheimer’s disease
 detection through whole-brain 3D-CNN MRI. Frontiers in Bioengineering and
