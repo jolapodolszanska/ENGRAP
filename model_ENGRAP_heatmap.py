@@ -472,7 +472,6 @@ def main():
     if best_ckpt_path and os.path.isfile(best_ckpt_path):
         print(f"Załadowano best ckpt: {best_ckpt_path}")
         model_best = HybridCNN.load_from_checkpoint(best_ckpt_path)
-        # DODAJ TU zapisywanie najlepszego modelu:
         torch.save(model_best, 'best_engrap_model.pth')
         print("Best model saved to: best_engrap_model.pth")
     else:
