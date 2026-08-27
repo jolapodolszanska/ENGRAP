@@ -2,7 +2,7 @@
 
 This repo is part of publication _ENGRAP: An Explainable AI Application for MRI-based Staging of Alzheimer’s, Neural Computing and Applications, Springer Nature, 2026.
 
-Podolszanska, J. ENGRAP: an explainable ai application for mri-based staging of Alzheimer’s disease. Neural Comput & Applic 38, 675 (2026). https://doi.org/10.1007/s00521-026-12424-1
+If you are using my work, please cite: Podolszanska, J. ENGRAP: an explainable ai application for mri-based staging of Alzheimer’s disease. Neural Comput & Applic 38, 675 (2026). https://doi.org/10.1007/s00521-026-12424-1
 
 ## About App
 This application works on the basis of two tasks that it is supposed to perform:
